@@ -110,6 +110,14 @@ class Database:
         """, (order_id, goods_id, quantity, price))
         self.conn.commit()
 
+    
+    def show_total(self):
+        self.cursor.execute("""
+            SELECT (quantity * price) AS total
+            FROM order_items 
+        """)
+        return self.cursor.fetchall()
+
 
 
 class Customer:
@@ -192,6 +200,16 @@ class Crm:
         self.db.add_order_items(order_id, goods_id, quantity)
         print('Заказ добавлен')
 
+    
+    def show_total(self):
+        rows = self.db.show_total()
+
+        total = 0
+        for row in rows:
+            total += int(*row)
+
+        print(total)
+
 
 
 crm = Crm()
@@ -205,8 +223,7 @@ while True:
     print("4. Show customers ")
     print("5. Show products ")
     print("6. Show orders ")
-    print("7. Details of order ")
-    print("8. Total sum of sales ")
+    print("7. Total sum of sales ")
     choice = input('Enter the number of action: ')
 
 
@@ -248,3 +265,7 @@ while True:
 
     elif choice == '6':
         crm.show_orders()
+
+    
+    elif choice == '7':
+        crm.show_total()
