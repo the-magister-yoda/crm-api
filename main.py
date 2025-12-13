@@ -196,9 +196,28 @@ class Crm:
             print(row)
 
 
-    def add_order_items(self, order_id, goods_id, quantity):
-        self.db.add_order_items(order_id, goods_id, quantity)
-        print('Заказ добавлен')
+    def add_order_details(self, order_id, goods_id, quantity):
+        self.db.add_order_details(order_id, goods_id, quantity)
+
+
+    def show_order_details(self, order_id):
+        rows = self.db.show_order_details(order_id)
+
+        if not rows:
+            print('There are no goods in order')
+            return
+
+        print('Products of order: ')
+        print("-------------------------")
+
+        total_sum = 0
+
+        for name, quantity, price, total in rows:
+            print(f"{name} | quantity: {quantity} x price: {price} = {total}")
+            total_sum += total
+
+        print("-------------------------")
+        print(f"Итого: {total_sum}\n")
 
     
     def show_total(self):
@@ -248,11 +267,19 @@ while True:
 
     elif choice == '3':
         crm.show_customers()
-        customer_id = input('Enter id of the customer: ')
+        customer_id = int(input('Enter id of the customer: '))
+
+        crm.show_products()
+        goods_id = int(input('Enter id of product: '))
+        quantity = int(input('Enter quantity: '))
+
         created_at = datetime.now()
         status = 'new'
+
+
         order = Order(customer_id, created_at, status)
-        crm.create_order(order)
+        order_id = crm.create_order(order)
+        crm.add_order_details(order_id, goods_id, quantity)
 
 
     elif choice == '4':
