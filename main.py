@@ -89,6 +89,7 @@ class Database:
             INSERT INTO orders(customer_id, created_at, status) VALUES(?, ?, ?)
             """, (order.customer_id, order.created_at.isoformat(), order.status))
         self.conn.commit()
+        return self.cursor.lastrowid
 
 
     def show_orders(self):
@@ -99,7 +100,7 @@ class Database:
         return [Order(customer_id, created_at, status, id) for id, customer_id, created_at, status in rows]
 
 
-    def add_order_items(self,order_id, goods_id, quantity):
+    def add_order_details(self, order_id, goods_id, quantity):
         self.cursor.execute("""
             SELECT price FROM goods WHERE id = ?
         """, (goods_id,))
@@ -110,7 +111,24 @@ class Database:
         """, (order_id, goods_id, quantity, price))
         self.conn.commit()
 
-    
+        self.cursor.execute("""
+            UPDATE goods 
+            SET quantity = quantity - ? 
+            WHERE id = ?
+        """, (quantity, goods_id))
+        self.conn.commit()
+
+
+    def show_order_details(self, order_id):
+        self.cursor.execute("""
+            SELECT g.name, oi.quantity, oi.price, (oi.quantity * oi.price) AS total
+            FROM order_items oi
+            JOIN goods g ON g.id = oi.goods_id
+            WHERE oi.order_id = ?
+        """, (order_id,))
+        return self.cursor.fetchall()
+
+
     def show_total(self):
         self.cursor.execute("""
             SELECT (quantity * price) AS total
@@ -174,8 +192,9 @@ class Crm:
 
 
     def create_order(self, order: Order):
-        self.db.create_order(order)
-        print('Заказ добавлен ')
+        order_id = self.db.create_order(order)
+        print(f'Заказ создан, id = {order_id}')
+        return order_id
 
 
     def show_customers(self):
@@ -219,7 +238,7 @@ class Crm:
         print("-------------------------")
         print(f"Итого: {total_sum}\n")
 
-    
+
     def show_total(self):
         rows = self.db.show_total()
 
@@ -292,7 +311,10 @@ while True:
 
     elif choice == '6':
         crm.show_orders()
+        order_id = int(input('Enter id of order you want to see: '))
 
-    
+        crm.show_order_details(order_id)
+
+
     elif choice == '7':
         crm.show_total()
