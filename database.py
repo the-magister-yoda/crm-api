@@ -144,3 +144,74 @@ class Database:
             FROM order_items 
         """)
         return self.cursor.fetchall()
+
+
+    def pay_for_order(self, order_id):
+        self.cursor.execute("""
+            SELECT status FROM orders
+            WHERE id = ?
+        """, (order_id,))
+
+        row = self.cursor.fetchone()
+        if row is None:
+            raise ValueError('Order is not found')
+
+        status = row[0]
+
+        if status == 'paid':
+            raise ValueError('Order already paid')
+
+        status = 'paid'
+
+        self.cursor.execute("""
+            UPDATE orders
+            SET status = ?
+            WHERE id = ?
+        """, (status, order_id))
+        self.conn.commit()
+
+
+    def cancel_order(self, order_id):
+        self.cursor.execute("""
+            SELECT status FROM orders
+            WHERE id = ?
+        """, (order_id,))
+
+        row = self.cursor.fetchone()
+
+        if row is None:
+            raise ValueError('Order not found')
+
+        status = row[0]
+
+        if status == 'paid':
+            raise ValueError('Order already paid it cant ba canceled')
+
+        self.cursor.execute("""
+            SELECT goods_id, quantity 
+            FROM order_items
+            WHERE order_id = ?
+        """, (order_id,))
+
+        items = self.cursor.fetchall()
+        if not items:
+            raise ValueError('Order has no items')
+
+        for goods_id, quantity in items:
+            self.cursor.execute("""
+                UPDATE goods
+                SET quantity = quantity + ?
+                WHERE id = ?
+            """, (quantity, goods_id))
+
+        self.cursor.execute("""
+            UPDATE orders
+            SET status = 'canceled'
+            WHERE id = ?
+        """, (status, order_id))
+        self.conn.commit()
+
+
+
+
+

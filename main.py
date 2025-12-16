@@ -50,6 +50,7 @@ class Crm:
         except ValueError as e:
             print(f'Error: {e}')
 
+
     def show_order_details(self, order_id):
         rows = self.db.show_order_details(order_id)
 
@@ -80,8 +81,26 @@ class Crm:
         print(total)
 
 
+    def pay_for_order(self, order_id):
+        try:
+            self.db.pay_for_order(order_id)
+            print('Paid successfully ')
+        except ValueError as e:
+            print(f'Error: {e}')
+
+
+    def cancel_order(self. order_id):
+        try:
+            self
+            print('Order canceled')
+        except ValueError as e:
+            print(f'Error: {e}')
+
+
+
 
 crm = Crm()
+
 
 while True:
     print("Choose the action: ")
@@ -93,8 +112,9 @@ while True:
     print("5. Show products ")
     print("6. Show orders ")
     print("7. Total sum of sales ")
+    print("8. Pay for order ")
+    print("9. Cancel order ")
     choice = input('Enter the number of action: ')
-
 
     if choice == '0':
         break
@@ -126,7 +146,6 @@ while True:
         created_at = datetime.now()
         status = 'new'
 
-
         order = Order(customer_id, created_at, status)
         order_id = crm.create_order(order)
         crm.add_order_details(order_id, goods_id, quantity)
@@ -149,3 +168,19 @@ while True:
 
     elif choice == '7':
         crm.show_total()
+
+
+    elif choice == '8':
+        crm.show_orders()
+        order_id = int(input('Enter id of order you want to pay: '))
+
+        crm.pay_for_order(order_id)
+
+
+    elif choice == '9':
+        crm.show_orders()
+        order_id = int(input('Enter id of order you want to cancel: '))
+
+        crm.cancel_order(order_id)
+
+
