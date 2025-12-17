@@ -11,12 +11,12 @@ class Crm:
 
     def add_customer(self, customer: Customer):
         self.db.add_customer(customer)
-        print('Клиент добавлен ')
+        print('Customer added ')
 
 
     def add_product(self, good: Goods):
         self.db.add_product(good)
-        print('Продукт добавлен ')
+        print('Product added ')
 
 
     def create_order(self, order: Order):
@@ -72,12 +72,8 @@ class Crm:
 
 
     def show_total(self):
-        rows = self.db.show_total()
-
-        total = 0
-        for row in rows:
-            total += int(*row)
-
+        total = self.db.show_total()
+        print('Общая сумму оплаченных заказов:')
         print(total)
 
 
@@ -89,12 +85,13 @@ class Crm:
             print(f'Error: {e}')
 
 
-    def cancel_order(self. order_id):
+    def cancel_order(self, order_id):
         try:
-            self
+            self.db.cancel_order(order_id)
             print('Order canceled')
         except ValueError as e:
             print(f'Error: {e}')
+
 
 
 
@@ -139,16 +136,19 @@ while True:
         crm.show_customers()
         customer_id = int(input('Enter id of the customer: '))
 
-        crm.show_products()
-        goods_id = int(input('Enter id of product: '))
-        quantity = int(input('Enter quantity: '))
-
         created_at = datetime.now()
         status = 'new'
-
         order = Order(customer_id, created_at, status)
         order_id = crm.create_order(order)
-        crm.add_order_details(order_id, goods_id, quantity)
+
+        while True:
+            crm.show_products()
+            goods_id = int(input('Enter id of product (0 to finish): '))
+            if goods_id == 0:
+                break
+
+            quantity = int(input('Enter quantity: '))
+            crm.add_order_details(order_id, goods_id, quantity)
 
 
     elif choice == '4':

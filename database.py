@@ -140,10 +140,13 @@ class Database:
 
     def show_total(self):
         self.cursor.execute("""
-            SELECT (quantity * price) AS total
-            FROM order_items 
+            SELECT SUM(oi.quantity * oi.price) 
+            FROM order_items oi
+            JOIN orders o ON  o.id = oi.order_id
+            WHERE o.status = 'paid'
         """)
-        return self.cursor.fetchall()
+        total = self.cursor.fetchone()
+        return total[0] if total[0] is not None else 0
 
 
     def pay_for_order(self, order_id):
@@ -208,7 +211,7 @@ class Database:
             UPDATE orders
             SET status = 'canceled'
             WHERE id = ?
-        """, (status, order_id))
+        """, (order_id,))
         self.conn.commit()
 
 
