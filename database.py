@@ -6,7 +6,10 @@ from models import Customer, Goods, Order
 
 class Database:
     def __init__(self):
-        self.conn = sq.connect('pg_crm_flowers.db')
+        self.conn = sq.connect(
+            'pg_crm_flowers.db',
+            check_same_thread=False
+        )
         self.cursor = self.conn.cursor()
         self.create_schema()
 
