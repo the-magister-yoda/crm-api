@@ -19,7 +19,8 @@ class Database:
             CREATE TABLE IF NOT EXISTS customers (
                   id INTEGER PRIMARY KEY AUTOINCREMENT,
                   name TEXT NOT NULL,
-                  phone TEXT NOT NULL
+                  phone TEXT NOT NULL,
+                  status TEXT NOT NULL
             )
         """)
 
@@ -59,8 +60,8 @@ class Database:
 
     def add_customer(self, customer):
         self.cursor.execute("""
-            INSERT INTO customers(name, phone) VALUES(?, ?)
-            """, (customer.name, customer.phone))
+            INSERT INTO customers(name, phone, status) VALUES(?, ?, ?)
+            """, (customer.name, customer.phone, customer.status))
         self.conn.commit()
 
 
@@ -73,10 +74,10 @@ class Database:
 
     def show_customers(self):
         self.cursor.execute("""
-            SELECT id, name, phone FROM customers
+            SELECT id, name, phone, status FROM customers
         """)
         rows = self.cursor.fetchall()
-        return [Customer(name, phone, id) for id, name, phone in rows]
+        return [Customer(name, phone, id, status) for id, name, phone, status in rows]
 
 
     def show_products(self):
@@ -217,6 +218,75 @@ class Database:
         """, (order_id,))
         self.conn.commit()
 
+    
+    def get_customer(self, id):
+        self.cursor.execute("""
+            SELECT name, phone FROM customers
+            WHERE id = ?
+        """, (id,))
+        data = self.cursor.fetchone()
+        if data is None:
+            raise ValueError('Customer not found')
+        
+        name, phone = data
+        
+        return Customer(name, phone, id)
+    
+
+    def update_customer(self, id, name=None, phone=None):
+        self.cursor.execute("""
+            SELECT status FROM customers
+            WHERE id = ?
+        """, (id,))
+        data = self.cursor.fetchone()
+
+        if data is None:
+            raise ValueError
+        
+        status = data[0]
+
+        if status == 'inactive':
+            raise ValueError
+        
+        if name is not None:
+            self.cursor.execute("""
+                UPDATE customers
+                SET name = ?
+                WHERE id = ?
+            """, (name, id))
+
+        if phone is not None:
+            self.cursor.execute("""
+                UPDATE customers
+                SET phone = ?
+                WHERE id = ?
+            """, (phone, id))
+        self.conn.commit()
+
+    
+
+    def delete_customer(self, id):
+        self.cursor.execute("""
+            SELECT id, name, phone, status FROM customers
+            WHERE id = ?
+        """, (id,))
+        data = self.cursor.fetchone()
+
+        if data is None:
+            raise ValueError
+        
+        id, name, phone, status = data
+
+        if status == 'inactive':
+            raise ValueError
+
+        self.cursor.execute("""
+            UPDATE customers
+            SET status = 'inactive'
+            WHERE id = ?
+        """, (id,))
+        self.conn.commit()
+        return Customer(name, phone, status, id)
 
 
 

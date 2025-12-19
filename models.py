@@ -1,12 +1,13 @@
 class Customer:
-    def __init__(self, name, phone, id=None):
+    def __init__(self, name, phone, id=None, status='active'):
         self.id = id
         self.name = name
         self.phone = phone
+        self.status = status
 
 
     def __str__(self):
-        return f'id: {self.id} | name: {self.name} | phone: {self.phone}'
+        return f'id: {self.id} | name: {self.name} | phone: {self.phone} | is_active: {self.is_active}'
 
 
 
