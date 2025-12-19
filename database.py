@@ -262,6 +262,7 @@ class Database:
                 WHERE id = ?
             """, (phone, id))
         self.conn.commit()
+        return Customer
 
     
 

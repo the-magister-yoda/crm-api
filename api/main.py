@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException
 from database import Database
 from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse
 from models import Customer, Goods
-from typing import List
+from typing import List, Optional
 
 
 app = FastAPI()
@@ -25,10 +25,19 @@ def create_customer(customer: CustomerCreate):
 
 
 @app.get("/customers", response_model=List[CustomerResponse])
-def show_customers():    
+def show_customers(search: Optional[str] = None):
+    if search is None:
+        customers = db.show_customers()
+        res = []
+        for customer in customers:
+            if customer.status == 'active':
+                res.append(customer)
+        return res
     return db.show_customers()
 
 
+# в общем так если мы что то передаем в search то он будет показывать всех покупателей
+# и активных и не активных а если мы ничего не передаем то он будет показывать только активных клиентов
 @app.get("/customers/{customer_id}", response_model=CustomerResponse)
 def show_customer(customer_id: int):
     try:
