@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from database import Database
-from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse
+from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse, OrderResponse, OrderCreate
 from errors import CustomerEmpty, CustomerNotFound, CustomerInactive
-from models import Customer, Goods
+from models import Customer, Goods, Order
 from typing import List, Optional
 
 
@@ -83,6 +83,7 @@ def delete_customer(customer_id: int):
     try:
         customer = db.delete_customer(customer_id)
         return customer
+    
     except ValueError:
         raise HTTPException(
             status_code=404,
@@ -107,3 +108,35 @@ def create_product(product: ProductCreate):
     return {"status": "created"}
 
 
+@app.get("/orders", response_model=List[OrderResponse])
+def show_orders():
+    return db.show_orders()
+
+
+@app.post("/orders", response_model=OrderResponse)
+def create_order(order: OrderCreate):
+    new_order = Order(
+        customer_id = order.customer_id
+    )    
+
+    try:
+        order_id = db.create_order(new_order)
+        new_order.id = order_id
+        return new_order
+    
+    except CustomerNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Customer not found'
+        )
+    
+    except CustomerInactive:
+        raise HTTPException(
+            status_code=400,
+            detail='Oops Customer is inactive'
+        )
+    
+
+@app.post("/orders/{order_id}/items")
+def add_products_to_order():
+    pass

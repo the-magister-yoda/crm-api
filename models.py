@@ -1,3 +1,6 @@
+from datetime import date, datetime
+
+
 class Customer:
     def __init__(self, name, phone, id=None, status='active'):
         self.id = id
@@ -7,7 +10,7 @@ class Customer:
 
 
     def __str__(self):
-        return f'id: {self.id} | name: {self.name} | phone: {self.phone} | is_active: {self.is_active}'
+        return f'id: {self.id} | name: {self.name} | phone: {self.phone} | status: {self.status}'
 
 
 
@@ -25,10 +28,10 @@ class Goods:
 
 
 class Order:
-    def __init__(self, customer_id, created_at, status, id=None):
+    def __init__(self, customer_id, status='created', id=None):
         self.id = id
         self.customer_id = customer_id
-        self.created_at = created_at
+        self.created_at = datetime.now()
         self.status = status
 
 

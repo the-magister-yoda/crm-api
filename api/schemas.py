@@ -26,3 +26,15 @@ class ProductResponse(BaseModel):
     name: str
     price: float
     quantity: int
+
+class OrderCreate(BaseModel):
+    customer_id: int
+    
+class OrderResponse(BaseModel):
+    id: int
+    customer_id: int
+    created_at: str
+    status: str
+
+
+

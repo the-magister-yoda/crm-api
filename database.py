@@ -90,6 +90,18 @@ class Database:
 
 
     def create_order(self, order):
+        self.cursor.execute("""
+        SELECT status FROM customers
+        WHERE id = ?
+        """, (order.customer_id,))
+        status = self.cursor.fetchone()
+
+        if status is None:
+            raise CustomerNotFound()
+        
+        if status[0] == 'inactive':
+            raise CustomerInactive()
+        
         order.status = 'created'
         self.cursor.execute("""
             INSERT INTO orders(customer_id, created_at, status) VALUES(?, ?, ?)
