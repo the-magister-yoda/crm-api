@@ -1,5 +1,6 @@
 import sqlite3 as sq
 
+from errors import CustomerNotFound, CustomerInactive, CustomerEmpty
 from models import Customer, Goods, Order
 
 
@@ -241,13 +242,16 @@ class Database:
         data = self.cursor.fetchone()
 
         if data is None:
-            raise ValueError
+            raise CustomerNotFound()
         
         status = data[0]
 
         if status == 'inactive':
-            raise ValueError
+            raise CustomerInactive()
         
+        if name is None and phone is None:
+            raise CustomerEmpty()
+
         if name is not None:
             self.cursor.execute("""
                 UPDATE customers
@@ -262,7 +266,15 @@ class Database:
                 WHERE id = ?
             """, (phone, id))
         self.conn.commit()
-        return Customer
+
+        self.cursor.execute("""
+            SELECT name, phone FROM customers
+            WHERE id = ?
+        """, (id,))
+        info = self.cursor.fetchone()
+        name, phone = info
+
+        return Customer(name, phone, status, id)
 
     
 

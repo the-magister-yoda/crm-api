@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from database import Database
 from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse
+from errors import CustomerEmpty, CustomerNotFound, CustomerInactive
 from models import Customer, Goods
 from typing import List, Optional
 
@@ -57,11 +58,25 @@ def update_customer(customer_id: int, customer_data: CustomerUpdate):
         phone = customer_data.phone
         customer = db.update_customer(customer_id, name, phone)
         return customer
-    except ValueError:
+    
+    except CustomerNotFound:
         raise HTTPException(
             status_code=404,
-            detail=''
+            detail='Customer not found'
         )
+    
+    except CustomerInactive:
+        raise HTTPException(
+            status_code=400,
+            detail='Customer is inactive updates are not allowed'
+        )
+    
+    except CustomerEmpty:
+        raise HTTPException(
+            status_code=400,
+            detail='you must put any data for update'
+        )
+
 
 @app.delete("/customers/{customer_id}", response_model=CustomerResponse)
 def delete_customer(customer_id: int):
