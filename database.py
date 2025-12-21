@@ -1,6 +1,6 @@
 import sqlite3 as sq
 
-from errors import CustomerNotFound, CustomerInactive, CustomerEmpty
+from errors import CustomerNotFound, CustomerInactive, CustomerEmpty, OrderNotFound, NotEnoughQuantity, OrderInactive, ProductNotFound
 from models import Customer, Goods, Order
 
 
@@ -120,17 +120,29 @@ class Database:
 
     def add_order_details(self, order_id, goods_id, quantity):
         self.cursor.execute("""
+        SELECT status FROM orders
+        WHERE id = ?
+        """, (order_id,))
+        status = self.cursor.fetchone()
+
+        if status is None:
+            raise OrderNotFound()
+
+        if status[0] != 'created':
+            raise OrderInactive()
+
+        self.cursor.execute("""
             SELECT price, quantity FROM goods WHERE id = ?
         """, (goods_id,))
 
         row = self.cursor.fetchone()
         if row is None:
-            raise ValueError('Product not found')
+            raise ProductNotFound()
 
         price, current_quantity = row
 
         if current_quantity < quantity:
-            raise ValueError("Not enough goods in stock")
+            raise NotEnoughQuantity()
 
         self.cursor.execute("""
             INSERT INTO order_items(order_id, goods_id, quantity, price) 
@@ -142,17 +154,40 @@ class Database:
             SET quantity = quantity - ?
             WHERE id = ?
         """, (quantity, goods_id))
+
         self.conn.commit()
 
 
     def show_order_details(self, order_id):
+        self.cursor.execute("""
+         SELECT status FROM orders
+         WHERE id = ?                 
+        """, (order_id,))
+        status = self.cursor.fetchone()
+
+        if status is None:
+            raise OrderNotFound()
+        
+        if status[0] == 'canceled':
+            raise OrderInactive()
+        
+
         self.cursor.execute("""
             SELECT g.name, oi.quantity, oi.price, (oi.quantity * oi.price) AS total
             FROM order_items oi
             JOIN goods g ON g.id = oi.goods_id
             WHERE oi.order_id = ?
         """, (order_id,))
-        return self.cursor.fetchall()
+        rows = self.cursor.fetchall()
+        return [
+                    {
+                        "name": row[0],
+                        "quantity": row[1],
+                        "price": row[2],
+                        "total": row[3],
+                    }
+                    for row in rows
+                ]
 
 
     def show_total(self):

@@ -28,10 +28,10 @@ class Goods:
 
 
 class Order:
-    def __init__(self, customer_id, status='created', id=None):
+    def __init__(self, customer_id, created_at=None, status='created', id=None):
         self.id = id
         self.customer_id = customer_id
-        self.created_at = datetime.now()
+        self.created_at = created_at or datetime.now()
         self.status = status
 
 

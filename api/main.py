@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from database import Database
-from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse, OrderResponse, OrderCreate
-from errors import CustomerEmpty, CustomerNotFound, CustomerInactive
+from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse, OrderResponse, OrderCreate, AddOrderItem, ShowOrderDetails
+from errors import CustomerEmpty, CustomerNotFound, CustomerInactive, NotEnoughQuantity, OrderNotFound, ProductNotFound, OrderInactive
 from models import Customer, Goods, Order
 from typing import List, Optional
 
@@ -138,5 +138,53 @@ def create_order(order: OrderCreate):
     
 
 @app.post("/orders/{order_id}/items")
-def add_products_to_order():
-    pass
+def add_products_to_order(order_id: int, item: AddOrderItem):
+    try:
+        db.add_order_details(
+            order_id = order_id,
+            goods_id=item.goods_id,
+            quantity=item.quantity
+        )
+        return {"status": "item added"}
+    
+    except OrderNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+    
+    except OrderInactive:
+        raise HTTPException(
+            status_code=400,
+            detail='Order is inactive'
+        )
+    
+    except ProductNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Product not found'
+        )
+    
+    except NotEnoughQuantity:
+        raise HTTPException(
+            status_code=400,
+            detail="Not enough goods in stock"
+        )
+    
+    
+@app.get("/orders/{order_id}", response_model=List[ShowOrderDetails])
+def show_order_details(order_id: int):
+    try:
+        return db.show_order_details(order_id)
+    
+    except OrderNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Order not found'
+        )
+    
+    except OrderInactive:
+        raise HTTPException(
+            status_code=400,
+            detail='Order were canceled'
+        )

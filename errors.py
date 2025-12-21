@@ -6,3 +6,16 @@ class CustomerInactive(Exception):
 
 class CustomerEmpty(Exception):
     pass
+
+class OrderNotFound(Exception):
+    pass
+
+class OrderInactive(Exception):
+    pass
+
+class NotEnoughQuantity(Exception):
+    pass
+
+class ProductNotFound(Exception): 
+    pass
+

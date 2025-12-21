@@ -1,5 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class CustomerCreate(BaseModel):
@@ -33,8 +34,20 @@ class OrderCreate(BaseModel):
 class OrderResponse(BaseModel):
     id: int
     customer_id: int
-    created_at: str
+    created_at: datetime
     status: str
+
+class AddOrderItem(BaseModel):
+    goods_id: int
+    quantity: int
+
+class ShowOrderDetails(BaseModel):
+    name: str
+    quantity: int
+    price: float
+    total: float
+  
+
 
 
 
