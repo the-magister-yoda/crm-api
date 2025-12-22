@@ -3,7 +3,8 @@
 REST API for managing customers, products, and orders.
 The project is created for real production systems.
 
-For a Russian-speaking audience
+For a Russian-speaking audience:
+
 (REST API для управления клиентами, товарами и заказами. Это crm система для цветочного магазина сюда я не стал выкладывать весь функционал так как считаю это не нужным и будет не честным по отношению к заказчику, оставил только самое минимальное но в принципе этого и хватает. Для ознакомление листайте вниз здесь есть вся необходимая информация.)
 
 ## Tech Stack
@@ -12,19 +13,23 @@ For a Russian-speaking audience
 - SQLite
 - Pydantic
 - Uvicorn
-- 
+
 ## Project Setup
 
-1. Clone the repository:
+Clone the repository:
 
 git clone https://github.com/the-magister-yoda/crm.git
+
 cd crm
 Install dependencies:
 
 pip install fastapi
 Run the server: uvicorn api.main:app --reload
+
 The API will be available at: http://127.0.0.1:8000
+
 Swagger documentation: http://127.0.0.1:8000/docs
+
 
 👤 Customers
 Create customer
@@ -35,8 +40,9 @@ POST /customers
   "phone": "any number that you have"
 }
 
-Get all customers
-Only active customers: GET /customers
+Get customers: GET /customers
+
+
 All customers (including inactive): GET /customers?search=all
 
 Get customer by ID: GET /customers/{customer_id}
@@ -95,17 +101,25 @@ PATCH /orders/{order_id}/cancel
 
 
 Business Rules
+
 You cannot:
+
 create an order for a non-existent or inactive customer
+
 add items to an order that is not in created status
+
 cancel a paid order
+
 Product stock decreases when items are added to an order
+
 Product stock is restored when an order is canceled
 
 
 
-Statuses
-Customer:active, inactive
 
-Order:created, confirmed, paid, canceled
+Statuses:
+
+Customer: active, inactive
+
+Order: created, confirmed, paid, canceled
 
