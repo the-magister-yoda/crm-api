@@ -19,3 +19,6 @@ class NotEnoughQuantity(Exception):
 class ProductNotFound(Exception): 
     pass
 
+class OrderAlreadyPaid(Exception):
+    pass
+

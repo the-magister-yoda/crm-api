@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from database import Database
 from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse, OrderResponse, OrderCreate, AddOrderItem, ShowOrderDetails
-from errors import CustomerEmpty, CustomerNotFound, CustomerInactive, NotEnoughQuantity, OrderNotFound, ProductNotFound, OrderInactive
+from errors import CustomerEmpty, CustomerNotFound, CustomerInactive, NotEnoughQuantity, OrderNotFound, ProductNotFound, OrderInactive, OrderAlreadyPaid
 from models import Customer, Goods, Order
 from typing import List, Optional
 
@@ -187,4 +187,54 @@ def show_order_details(order_id: int):
         raise HTTPException(
             status_code=400,
             detail='Order were canceled'
+        )
+    
+
+@app.patch("/orders/{order_id}/cancel")
+def cancel_order(order_id: int):
+    try:
+        db.cancel_order(order_id)
+        return {"status": "canceled"}
+
+    except OrderNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Order not found'
+        )
+    
+    except OrderAlreadyPaid:
+        raise HTTPException(
+            status_code=400,
+            detail='Order already paid it can not be canceled'
+        )
+    
+    except ProductNotFound:
+        raise HTTPException(
+            status_code=400,
+            detail='There are no items in order'
+        )
+    
+
+@app.patch("/orders/{order_id}/confirm")
+def confirm_order(order_id: int):
+    try:
+        db.confirm_order(order_id)
+        return {"status": "confirmed"}
+    
+    except OrderNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Order not found'
+        )
+    
+    except ProductNotFound:
+        raise HTTPException(
+            status_code=400,
+            detail='There are no goods in order'
+        )
+    
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail='Order cannot be confirmed'
         )

@@ -1,6 +1,6 @@
 import sqlite3 as sq
 
-from errors import CustomerNotFound, CustomerInactive, CustomerEmpty, OrderNotFound, NotEnoughQuantity, OrderInactive, ProductNotFound
+from errors import CustomerNotFound, CustomerInactive, CustomerEmpty, OrderNotFound, NotEnoughQuantity, OrderInactive, ProductNotFound, OrderAlreadyPaid
 from models import Customer, Goods, Order
 
 
@@ -235,12 +235,12 @@ class Database:
         row = self.cursor.fetchone()
 
         if row is None:
-            raise ValueError('Order not found')
+            raise OrderNotFound()
 
         status = row[0]
 
         if status == 'paid':
-            raise ValueError('Order already paid it cant ba canceled')
+            raise OrderAlreadyPaid()
 
         self.cursor.execute("""
             SELECT goods_id, quantity 
@@ -250,7 +250,7 @@ class Database:
 
         items = self.cursor.fetchall()
         if not items:
-            raise ValueError('Order has no items')
+            raise ProductNotFound()
 
         for goods_id, quantity in items:
             self.cursor.execute("""
@@ -347,6 +347,42 @@ class Database:
         """, (id,))
         self.conn.commit()
         return Customer(name, phone, status, id)
+    
+
+    def confirm_order(self, order_id):
+        self.cursor.execute("""
+            SELECT status FROM orders
+            WHERE id = ?           
+        """, (order_id,))
+        status = self.cursor.fetchone()
+
+        if status is None:
+            raise OrderNotFound()
+        
+        if status[0] != 'created':
+            raise ValueError('Order cannot be confirmed')
+        
+
+        self.cursor.execute("""
+            SELECT goods_id FROM order_items
+            WHERE order_id = ?
+        """,(order_id,))
+        goods = self.cursor.fetchone()
+
+        if goods is None:
+            raise ProductNotFound()
+        
+        self.cursor.execute("""
+            UPDATE orders
+            SET status = 'confirmed'
+            WHERE id = ?
+        """,(order_id,))
+        self.conn.commit()
+       
+        
+    
+        
+
 
 
 
