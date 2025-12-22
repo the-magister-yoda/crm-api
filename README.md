@@ -18,7 +18,7 @@ For a Russian-speaking audience:
 
 Clone the repository:
 
-git clone https://github.com/the-magister-yoda/crm.git
+git clone https://github.com/the-magister-yoda/crm-api.git
 
 cd crm
 Install dependencies:
