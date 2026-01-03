@@ -33,6 +33,7 @@ class OrderCreate(BaseModel):
     
 class OrderResponse(BaseModel):
     id: int
+    name: str
     customer_id: int
     created_at: datetime
     status: str

@@ -1,6 +1,6 @@
 import sqlite3 as sq
 
-from errors import CustomerNotFound, CustomerInactive, CustomerEmpty, OrderNotFound, NotEnoughQuantity, OrderInactive, ProductNotFound, OrderAlreadyPaid
+from errors import CustomerNotFound, CustomerInactive, CustomerEmpty, OrderNotFound, NotEnoughQuantity, OrderInactive, ProductNotFound, OrderAlreadyPaid, PhoneNumberIsTaken, OrderPacked, OrderEmpty
 from models import Customer, Goods, Order
 
 
@@ -61,6 +61,15 @@ class Database:
 
     def add_customer(self, customer):
         self.cursor.execute("""
+            SELECT id FROM customers
+            WHERE phone = ?    
+        """, (customer.phone,))
+        rows = self.cursor.fetchone()
+
+        if rows is not None:
+            raise PhoneNumberIsTaken()
+
+        self.cursor.execute("""
             INSERT INTO customers(name, phone, status) VALUES(?, ?, ?)
             """, (customer.name, customer.phone, customer.status))
         self.conn.commit()
@@ -99,9 +108,12 @@ class Database:
         if status is None:
             raise CustomerNotFound()
         
-        if status[0] == 'inactive':
+        elif status[0] == 'canceled':
             raise CustomerInactive()
-        
+
+        elif status[0] == 'packed':
+            raise OrderPacked()
+
         order.status = 'created'
         self.cursor.execute("""
             INSERT INTO orders(customer_id, created_at, status) VALUES(?, ?, ?)
@@ -109,14 +121,25 @@ class Database:
         self.conn.commit()
         return self.cursor.lastrowid
 
-
     def show_orders(self):
         self.cursor.execute("""
-            SELECT id, customer_id, created_at, status FROM orders
+            SELECT o.id, o.customer_id, c.name, o.created_at, o.status
+            FROM orders o
+            JOIN customers c ON c.id = o.customer_id
         """)
-        rows = self.cursor.fetchall()
-        return [Order(customer_id, created_at, status, id) for id, customer_id, created_at, status in rows]
 
+        rows = self.cursor.fetchall()
+
+        return [
+            Order(
+                id=id,
+                customer_id=customer_id,
+                name=name,
+                created_at=created_at,
+                status=status
+            )
+            for id, customer_id, name, created_at, status in rows
+        ]
 
     def add_order_details(self, order_id, goods_id, quantity):
         self.cursor.execute("""
@@ -128,14 +151,17 @@ class Database:
         if status is None:
             raise OrderNotFound()
 
-        if status[0] != 'created':
+        elif status[0] == 'paid':
+            raise OrderAlreadyPaid()
+
+        elif status[0] == 'canceled':
             raise OrderInactive()
 
         self.cursor.execute("""
             SELECT price, quantity FROM goods WHERE id = ?
         """, (goods_id,))
-
         row = self.cursor.fetchone()
+
         if row is None:
             raise ProductNotFound()
 
@@ -154,6 +180,12 @@ class Database:
             SET quantity = quantity - ?
             WHERE id = ?
         """, (quantity, goods_id))
+
+        self.cursor.execute("""
+            UPDATE orders
+            SET status = 'packed'
+            WHERE id = ?
+        """, (order_id,))
 
         self.conn.commit()
 
@@ -209,20 +241,24 @@ class Database:
 
         row = self.cursor.fetchone()
         if row is None:
-            raise ValueError('Order is not found')
+            raise OrderNotFound()
 
         status = row[0]
 
         if status == 'paid':
-            raise ValueError('Order already paid')
+            raise OrderAlreadyPaid()
 
-        status = 'paid'
+        elif status == 'canceled':
+            raise OrderInactive()
+
+        elif status == 'created':
+            raise OrderEmpty()
 
         self.cursor.execute("""
             UPDATE orders
-            SET status = ?
+            SET status = 'paid'
             WHERE id = ?
-        """, (status, order_id))
+        """, (order_id,))
         self.conn.commit()
 
 
@@ -323,7 +359,24 @@ class Database:
 
         return Customer(name, phone, status, id)
 
-    
+
+    def delete_prodcut(self, id):
+        self.cursor.execute("""
+            SELECT name FROM goods
+            WHERE id = ?
+        """,(id,))
+
+        rows = self.cursor.fetchone()
+
+        if rows is None:
+            raise ProductNotFound()
+
+        self.cursor.execute("""
+            DELETE FROM goods
+            WHERE id = ?
+        """,(id,))
+        self.conn.commit()
+
 
     def delete_customer(self, id):
         self.cursor.execute("""
@@ -333,12 +386,12 @@ class Database:
         data = self.cursor.fetchone()
 
         if data is None:
-            raise ValueError
+            raise CustomerNotFound()
         
         id, name, phone, status = data
 
         if status == 'inactive':
-            raise ValueError
+            raise CustomerInactive()
 
         self.cursor.execute("""
             UPDATE customers

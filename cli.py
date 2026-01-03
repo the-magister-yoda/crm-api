@@ -61,14 +61,11 @@ class Crm:
         print('Products of order: ')
         print("-------------------------")
 
-        total_sum = 0
-
-        for name, quantity, price, total in rows:
-            print(f"{name} | quantity: {quantity} x price: {price} = {total}")
-            total_sum += total
+        for row in rows:
+            print(f"Name: {row['name']} | quantity: {row['quantity']} | Total price: {row['total']}")
 
         print("-------------------------")
-        print(f"Total: {total_sum}\n")
+
 
 
     def show_total(self):
@@ -110,7 +107,7 @@ while True:
     print("6. Show orders ")
     print("7. Total sum of sales ")
     print("8. Pay for order ")
-    print("9. Cancel order ")
+    print("9. Delete order ")
     choice = input('Enter the number of action: ')
 
     if choice == '0':

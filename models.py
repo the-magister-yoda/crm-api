@@ -28,12 +28,13 @@ class Goods:
 
 
 class Order:
-    def __init__(self, customer_id, created_at=None, status='created', id=None):
+    def __init__(self, customer_id, created_at=None, status='created', id=None, name=None):
         self.id = id
+        self.name = name
         self.customer_id = customer_id
         self.created_at = created_at or datetime.now()
         self.status = status
 
 
     def __str__(self):
-        return f'id: {self.id} | customer_id: {self.customer_id} | created at: {self.created_at} | :status: {self.status}'
+        return f'id: {self.id} | name: {self.name} | customer_id: {self.customer_id} | created at: {self.created_at} | :status: {self.status}'

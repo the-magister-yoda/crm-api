@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from database import Database
 from api.schemas import CustomerCreate, ProductCreate, CustomerResponse, CustomerUpdate, ProductResponse, OrderResponse, OrderCreate, AddOrderItem, ShowOrderDetails
-from errors import CustomerEmpty, CustomerNotFound, CustomerInactive, NotEnoughQuantity, OrderNotFound, ProductNotFound, OrderInactive, OrderAlreadyPaid
+from errors import CustomerEmpty, CustomerNotFound, CustomerInactive, NotEnoughQuantity, OrderNotFound, ProductNotFound, OrderInactive, OrderAlreadyPaid, PhoneNumberIsTaken, OrderPacked, OrderEmpty
 from models import Customer, Goods, Order
 from typing import List, Optional
 
@@ -21,8 +21,15 @@ def create_customer(customer: CustomerCreate):
         name=customer.name,
         phone=customer.phone
     )
-    db.add_customer(new_customer)
-    return {"status": "created"}
+    try:
+        db.add_customer(new_customer)
+        return {"status": "created"}
+
+    except PhoneNumberIsTaken:
+        raise HTTPException(
+            status_code=409,
+            detail='This phone number is already taken'
+        )
 
 
 @app.get("/customers", response_model=List[CustomerResponse])
@@ -78,18 +85,23 @@ def update_customer(customer_id: int, customer_data: CustomerUpdate):
         )
 
 
-@app.delete("/customers/{customer_id}", response_model=CustomerResponse)
+@app.delete("/customers/{customer_id}")
 def delete_customer(customer_id: int):
     try:
         customer = db.delete_customer(customer_id)
-        return customer
+        return {"status": "deleted successfully"}
     
-    except ValueError:
+    except CustomerNotFound:
         raise HTTPException(
             status_code=404,
-            detail='Customer not found, or already deleted'
+            detail='Customer not found'
         )
 
+    except CustomerInactive:
+        raise HTTPException(
+            status_code=409,
+            detail='Customer is already inactive'
+        )
 
 
 @app.get("/products", response_model=List[ProductResponse])
@@ -106,6 +118,19 @@ def create_product(product: ProductCreate):
     )
     db.add_product(new_product)
     return {"status": "created"}
+
+
+@app.delete("/products/{product_id}")
+def delete_product(product_id: int):
+    try:
+        db.delete_prodcut(product_id)
+        return {"status": "successfully"}
+
+    except ProductNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Product not found'
+        )
 
 
 @app.get("/orders", response_model=List[OrderResponse])
@@ -135,13 +160,19 @@ def create_order(order: OrderCreate):
             status_code=400,
             detail='Oops Customer is inactive'
         )
-    
+
+    except OrderPacked:
+        raise HTTPException(
+            status_code=400,
+            detail='Order is already created and packed'
+        )
+
 
 @app.post("/orders/{order_id}/items")
 def add_products_to_order(order_id: int, item: AddOrderItem):
     try:
         db.add_order_details(
-            order_id = order_id,
+            order_id=order_id,
             goods_id=item.goods_id,
             quantity=item.quantity
         )
@@ -151,6 +182,12 @@ def add_products_to_order(order_id: int, item: AddOrderItem):
         raise HTTPException(
             status_code=404,
             detail="Order not found"
+        )
+
+    except OrderAlreadyPaid:
+        raise HTTPException(
+            status_code=400,
+            detail='Order is already paid you can not add products to order anymore'
         )
     
     except OrderInactive:
@@ -238,3 +275,35 @@ def confirm_order(order_id: int):
             status_code=400,
             detail='Order cannot be confirmed'
         )
+
+
+@app.post("/orders/{order_id}/pay")
+def pay_for_order(order_id: int):
+    try:
+        db.pay_for_order(order_id=order_id)
+        return {"status": "Order has been paid"}
+
+    except OrderNotFound:
+        raise HTTPException(
+            status_code=404,
+            detail='Order not found'
+        )
+
+    except OrderAlreadyPaid:
+        raise HTTPException(
+            status_code=400,
+            detail='Order is already paid'
+        )
+
+    except OrderInactive:
+        raise HTTPException(
+            status_code=400,
+            detail='Order is not active it can not proceed payment'
+        )
+
+    except OrderEmpty:
+        raise HTTPException(
+            status_code=400,
+            detail='Order is empty'
+        )
+
